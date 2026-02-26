@@ -21,6 +21,7 @@ MAX_BIG_BREAK_SECS = 120
 # --- 3. THE "HUMAN" VARIANTS ---
 GHOST_SENTENCE_CHANCE = 0.15  # 15% chance to "rethink" a sentence start
 PLANNED_ERROR_RATE = 0.05  # 5% of words typed wrong for the Phase 2 fix
+PERMANENT_TYPO_RATE = 0.01  # 1% of typos are left uncorrected permanently
 CORRECTED_TYPO_RATE = 0.02  # Immediate "fat-finger" corrections
 SHIFT_MISS_RATE = 0.03  # Missing the shift key on capitals
 
@@ -113,20 +114,30 @@ def human_type(text):
 
     # Calculate base speed
     base_delay = (WRITING_TIME_MINUTES * 60) / (total_chars * 1.5)
+    momentum = 1.0
 
-    print("SYSTEM: Logic Loaded.")
-    print("ACTION: You have 5 seconds to focus your Google Doc/Word window.")
+    print("V6 RESTORED: Momentum & Break Logic Active. 5s to focus.")
     time.sleep(5)
 
     # --- PHASE 1: DRAFTING ---
     for p_idx, paragraph in enumerate(paragraphs):
+        # 1. BIG BREAK LOGIC (Between Paragraphs)
         if p_idx > 0:
             pyautogui.press("enter", presses=2)
-            time.sleep(random.uniform(2, 5))
+            if random.random() < 0.7:
+                break_duration = random.uniform(30, MAX_BIG_BREAK_SECS)
+                print(f"Taking a big break: {int(break_duration)}s")
+                time.sleep(break_duration)
 
         sentences = [s.strip() for s in re.split(r"(?<=[.!?]) +", paragraph) if s.strip()]
 
         for s_idx, sentence in enumerate(sentences):
+            # 2. SMALL BREAK LOGIC (Mid-Paragraph "Thinking")
+            if s_idx > 0 and random.random() < 0.15:
+                break_duration = random.uniform(5, MAX_SMALL_BREAK_SECS)
+                print(f"Thinking pause: {int(break_duration)}s")
+                time.sleep(break_duration)
+
             # 1. GHOST RETHINK
             if random.random() < GHOST_SENTENCE_CHANCE:
                 rethink = get_ai_rethink(sentence)
@@ -153,22 +164,33 @@ def human_type(text):
                     repass_queue.append((global_word_count, word))
 
                 for char in target_word:
+                    current_delay = (base_delay / momentum) * random.uniform(0.8, 1.2)
                     rand = random.random()
                     if char.isupper() and rand < SHIFT_MISS_RATE:
                         write_char(char.lower())
                         time.sleep(0.3)
                         pyautogui.press("backspace")
                         write_char(char)
+                        momentum = 1.0
                     elif rand < CORRECTED_TYPO_RATE and char.isalpha():
                         write_char(get_typo(char))
                         time.sleep(0.3)
                         pyautogui.press("backspace")
                         write_char(char)
+                        momentum = 1.0
+                    elif rand < PERMANENT_TYPO_RATE and char.isalpha():
+                        write_char(get_typo(char))
                     elif char in ACCENT_MAP and rand < 0.04:
                         write_char(ACCENT_MAP[char])
+                        momentum = min(4.5, momentum + 0.1)
                     else:
                         write_char(char)
-                    time.sleep(base_delay * random.uniform(0.8, 1.2))
+                        momentum = min(4.5, momentum + 0.1)
+
+                    if char in ".!?":
+                        momentum = 1.0
+
+                    time.sleep(current_delay)
 
                 # Add a space unless it's the very end of the doc
                 if not (
@@ -177,11 +199,12 @@ def human_type(text):
                     and w_idx == len(words) - 1
                 ):
                     write_char(" ")
-                    time.sleep(base_delay * random.uniform(0.5, 1.0))
+                    momentum = max(1.0, momentum - 0.5)
+                    time.sleep((base_delay / momentum) * random.uniform(0.5, 1.0))
 
                 global_word_count += 1
 
-            time.sleep(random.uniform(1.5, 3.5))
+            time.sleep(random.uniform(1, 3))
 
     # --- PHASE 2: THE REPASS (Correction) ---
     print(f"PHASE 2: Reviewing and correcting {len(repass_queue)} item(s)...")

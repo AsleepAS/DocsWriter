@@ -7,6 +7,9 @@ DocsWriter is an open-source Python script for simulating a natural typing sessi
 - Types text with variable timing and pauses.
 - Simulates occasional false starts.
 - Introduces realistic typo behavior (neighbor-key mistakes, shift misses, accent simplification).
+- Adds momentum-based typing speed changes while drafting.
+- Includes small/big "thinking" breaks between sentences and paragraphs.
+- Leaves a small number of permanent typos for more natural revision traces.
 - Performs a second pass to correct selected words.
 - Uses OpenAI to generate short "rethink" sentence starts.
 
@@ -59,6 +62,7 @@ You can tune behavior at the top of `docs_writer.py`:
 - `GHOST_SENTENCE_CHANCE`
 - `PLANNED_ERROR_RATE`
 - `CORRECTED_TYPO_RATE`
+- `PERMANENT_TYPO_RATE`
 - `SHIFT_MISS_RATE`
 
 ## Safety Notes
