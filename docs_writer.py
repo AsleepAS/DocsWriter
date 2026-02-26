@@ -107,6 +107,9 @@ def write_char(char):
 
 
 def human_type(text):
+    pyautogui.FAILSAFE = True  # Move mouse to top-left to abort
+    pyautogui.PAUSE = 0.01  # Tiny internal delay for stability
+
     paragraphs = text.split("\n\n")
     total_chars = len(text)
     repass_queue = []
@@ -124,6 +127,7 @@ def human_type(text):
         # 1. BIG BREAK LOGIC (Between Paragraphs)
         if p_idx > 0:
             pyautogui.press("enter", presses=2)
+            momentum = 1.0  # Reset rhythm for new paragraph
             if random.random() < 0.7:
                 break_duration = random.uniform(30, MAX_BIG_BREAK_SECS)
                 print(f"Taking a big break: {int(break_duration)}s")
