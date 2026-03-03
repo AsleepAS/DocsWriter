@@ -1,27 +1,28 @@
 # DocsWriter
 
-DocsWriter is an open-source Python script for simulating a natural typing session in editors such as Google Docs or Microsoft Word.
+DocsWriter now includes a lightweight desktop app (`app.py`) that wraps the existing `docs_writer.py` script.
 
-## Features
+## What changed
 
-- Types text with variable timing and pauses.
-- Simulates occasional false starts.
-- Introduces realistic typo behavior (neighbor-key mistakes, shift misses, accent simplification).
-- Adds momentum-based typing speed changes while drafting.
-- Includes small/big "thinking" breaks between sentences and paragraphs.
-- Leaves a small number of permanent typos for more natural revision traces.
-- Performs a second pass to correct selected words.
-- Uses OpenAI to generate short "rethink" sentence starts.
+- `docs_writer.py` is still the typing engine and was not edited.
+- `app.py` provides a one-window notepad-like UI.
+- Top hotbar tabs:
+  - **File**: New, Load, Save, Save As
+  - **Run**: profile selection + all run parameters
+  - **Settings**: light/dark mode + API key manager
+- API keys/models are stored in a separate `.env` file, with support for multiple profiles.
 
 ## Files
 
-- `docs_writer.py` – main automation script.
+- `docs_writer.py` – original automation script.
+- `app.py` – desktop application.
+- `.env.example` – template for API key/model profiles.
+- `build_portable_zip.py` – creates a downloadable zip with bundled dependencies.
 
-## Requirements
+## Requirements (for development)
 
 - Python 3.9+
-- Desktop session where keyboard automation is allowed
-- Packages:
+- Python packages required by `docs_writer.py`:
   - `pyautogui`
   - `pyperclip`
   - `openai`
@@ -32,41 +33,62 @@ Install dependencies:
 pip install pyautogui pyperclip openai
 ```
 
-## Setup
+## Run from source
 
-1. Set your OpenAI API key:
-
-```bash
-export OPENAI_API_KEY="your_openai_api_key"
-```
-
-2. Open `docs_writer.py` and paste your content into `TEXT_TO_WRITE`.
-
-## Usage
-
-Run the script:
+1. Copy and edit environment file:
 
 ```bash
-python docs_writer.py
+cp .env.example .env
 ```
 
-After launching, you have 5 seconds to focus the target document window. The script then types your text and performs a correction pass.
+2. Add one or more profiles:
 
-## Configuration
+```dotenv
+OPENAI_API_KEY_DEFAULT=sk-...
+OPENAI_MODEL_DEFAULT=gpt-4o-mini
+OPENAI_API_KEY_WORK=sk-...
+OPENAI_MODEL_WORK=gpt-4.1-mini
+```
 
-You can tune behavior at the top of `docs_writer.py`:
+3. Launch:
 
-- `WRITING_TIME_MINUTES`
-- `MAX_SMALL_BREAK_SECS`
-- `MAX_BIG_BREAK_SECS`
-- `GHOST_SENTENCE_CHANCE`
-- `PLANNED_ERROR_RATE`
-- `CORRECTED_TYPO_RATE`
-- `PERMANENT_TYPO_RATE`
-- `SHIFT_MISS_RATE`
+```bash
+python app.py
+```
 
-## Safety Notes
+You can also create/edit profiles from **Settings > Manage API Keys**.
 
-- Keyboard/mouse automation can interfere with your normal input while running.
-- Test in a disposable document first.
-- Keep your API key in environment variables; do not hard-code secrets.
+## Build a downloadable zip (includes deps + ready `.env`)
+
+This creates a `dist/DocsWriterPortable.zip` archive that users can extract and run immediately.
+
+```bash
+python build_portable_zip.py
+```
+
+If your script is outside the project directory, point it explicitly:
+
+```bash
+python build_portable_zip.py --root "C:/path/to/DocsWriter"
+```
+
+The zip includes:
+
+- `.venv` with all required dependencies preinstalled (`pyautogui`, `pyperclip`, `openai`)
+- `app.py` and `docs_writer.py`
+- pre-created `.env` (from `.env.example`)
+- launchers:
+  - `run-docswriter.sh` (macOS/Linux)
+  - `run-docswriter.bat` (Windows)
+
+User flow after download:
+
+1. Unzip `DocsWriterPortable.zip`
+2. Open `.env` and paste API key(s)
+3. Run launcher (`run-docswriter.sh` or `run-docswriter.bat`)
+
+## Notes
+
+- Keep `.env` private and never commit real keys.
+- Keyboard automation can interfere with normal input while running.
+- Test with disposable documents first.
