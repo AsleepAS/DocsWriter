@@ -17,8 +17,9 @@ DocsWriter now includes a lightweight desktop app (`app.py`) that wraps the exis
 - `docs_writer.py` – original automation script.
 - `app.py` – desktop application.
 - `.env.example` – template for API key/model profiles.
+- `build_portable_zip.py` – creates a downloadable zip with bundled dependencies.
 
-## Requirements
+## Requirements (for development)
 
 - Python 3.9+
 - Python packages required by `docs_writer.py`:
@@ -32,7 +33,7 @@ Install dependencies:
 pip install pyautogui pyperclip openai
 ```
 
-## Setup
+## Run from source
 
 1. Copy and edit environment file:
 
@@ -49,30 +50,36 @@ OPENAI_API_KEY_WORK=sk-...
 OPENAI_MODEL_WORK=gpt-4.1-mini
 ```
 
-You can also create/edit profiles from **Settings > Manage API Keys**.
-
-## Run
+3. Launch:
 
 ```bash
 python app.py
 ```
 
-## Build as downloadable app (single file)
+You can also create/edit profiles from **Settings > Manage API Keys**.
 
-Install PyInstaller:
+## Build a downloadable zip (includes deps + ready `.env`)
 
-```bash
-pip install pyinstaller
-```
-
-Build executable:
+This creates a `dist/DocsWriterPortable.zip` archive that users can extract and run immediately.
 
 ```bash
-pyinstaller --onefile --windowed app.py
+python build_portable_zip.py
 ```
 
-Output binary will be in `dist/` (for example `dist/app.exe` on Windows).
-Distribute it with `docs_writer.py` and `.env` in the same folder.
+The zip includes:
+
+- `.venv` with all required dependencies preinstalled (`pyautogui`, `pyperclip`, `openai`)
+- `app.py` and `docs_writer.py`
+- pre-created `.env` (from `.env.example`)
+- launchers:
+  - `run-docswriter.sh` (macOS/Linux)
+  - `run-docswriter.bat` (Windows)
+
+User flow after download:
+
+1. Unzip `DocsWriterPortable.zip`
+2. Open `.env` and paste API key(s)
+3. Run launcher (`run-docswriter.sh` or `run-docswriter.bat`)
 
 ## Notes
 
