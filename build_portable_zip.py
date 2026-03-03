@@ -10,6 +10,10 @@ import sys
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
+
+class BundleBuildError(RuntimeError):
+    """Raised when the portable bundle cannot be assembled."""
+
 ROOT = Path(__file__).resolve().parent
 BUILD_DIR = ROOT / "build"
 DIST_DIR = ROOT / "dist"
@@ -38,7 +42,7 @@ SCRIPT_DIR="$(cd "$(dirname \"${BASH_SOURCE[0]}\")" && pwd)"
 
 
 def launcher_bat_text() -> str:
-    return """@echo off
+    return r"""@echo off
 set SCRIPT_DIR=%~dp0
 "%SCRIPT_DIR%\.venv\Scripts\python.exe" "%SCRIPT_DIR%\app.py"
 """
@@ -49,6 +53,14 @@ def build_portable_zip(skip_pip: bool) -> Path:
     if bundle_dir.exists():
         shutil.rmtree(bundle_dir)
     bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    required = RUNTIME_FILES + [".env.example"]
+    missing = [rel for rel in required if not (ROOT / rel).exists()]
+    if missing:
+        raise BundleBuildError(
+            "Missing required runtime files: " + ", ".join(missing) +
+            ". Run this script from the DocsWriter project root or pass --root."
+        )
 
     for rel in RUNTIME_FILES:
         shutil.copy2(ROOT / rel, bundle_dir / rel)
@@ -87,16 +99,30 @@ def build_portable_zip(skip_pip: bool) -> Path:
 
 
 def main() -> None:
+    global ROOT, BUILD_DIR, DIST_DIR
+
     parser = argparse.ArgumentParser(description="Build a downloadable DocsWriter zip bundle.")
     parser.add_argument(
         "--skip-pip",
         action="store_true",
         help="Create bundle and venv but skip dependency installation (useful in restricted CI).",
     )
+    parser.add_argument(
+        "--root",
+        default=str(ROOT),
+        help="Path to DocsWriter project root (defaults to script directory).",
+    )
     args = parser.parse_args()
 
-    zip_path = build_portable_zip(skip_pip=args.skip_pip)
-    print(f"Created: {zip_path}")
+    ROOT = Path(args.root).resolve()
+    BUILD_DIR = ROOT / "build"
+    DIST_DIR = ROOT / "dist"
+
+    try:
+        zip_path = build_portable_zip(skip_pip=args.skip_pip)
+        print(f"Created: {zip_path}")
+    except BundleBuildError as exc:
+        raise SystemExit(f"ERROR: {exc}") from exc
 
 
 if __name__ == "__main__":

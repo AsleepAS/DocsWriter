@@ -66,6 +66,12 @@ This creates a `dist/DocsWriterPortable.zip` archive that users can extract and 
 python build_portable_zip.py
 ```
 
+If your script is outside the project directory, point it explicitly:
+
+```bash
+python build_portable_zip.py --root "C:/path/to/DocsWriter"
+```
+
 The zip includes:
 
 - `.venv` with all required dependencies preinstalled (`pyautogui`, `pyperclip`, `openai`)
